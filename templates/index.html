@@ -1,0 +1,937 @@
+<!-- templates/index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Real-Time Financial Topic Radar</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --success-color: #4cc9f0;
+      --danger-color: #f72585;
+      --warning-color: #f8961e;
+      --dark-color: #1a1a2e;
+      --light-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --border-color: #e9ecef;
+    }
+    
+    body {
+      background-color: #f8f9fa;
+      color: #2b2d42;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    #loadingIndicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(5px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+      gap: 1.5rem;
+      transition: all 0.3s ease-out;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(67, 97, 238, 0.1);
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      position: relative;
+    }
+    .spinner::after {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      border: 4px solid transparent;
+      border-top-color: rgba(67, 97, 238, 0.3);
+      border-radius: 50%;
+      animation: spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite 0.2s;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    header {
+      padding: 1.5rem 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      margin: 1.5rem 0 2rem;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
+    }
+    header:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    }
+    header h1 {
+      font-weight: 700;
+      font-size: 1.8rem;
+      background: linear-gradient(90deg, #4361ee, #4cc9f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    header small {
+      font-size: 0.9rem;
+      color: #6c757d;
+      font-weight: 400;
+    }
+    #controls input { max-width: 420px; }
+    section { margin-bottom: 1.5rem; }
+    .tweet {
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      border-left: 4px solid #6c757d;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .tweet::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+    .tweet:hover::before {
+      transform: translateX(100%);
+    }
+    .tweet.animate__animated {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .tweet.positive { 
+      border-left-color: #4cc9f0;
+      background: linear-gradient(to right, rgba(76, 201, 240, 0.03), white);
+    }
+    .tweet.negative { 
+      border-left-color: #f72585;
+      background: linear-gradient(to right, rgba(247, 37, 133, 0.03), white);
+    }
+    .tweet.neutral { 
+      border-left-color: #6c757d;
+      background: linear-gradient(to right, rgba(108, 117, 125, 0.03), white);
+    }
+    .tweet .meta {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .tweet .meta .time {
+      color: #6c757d;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .tweet .meta .time i {
+      font-size: 0.7rem;
+    }
+    .tweet .meta .sentiment {
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      text-transform: capitalize;
+    }
+    .tweet .meta .sentiment i {
+      font-size: 0.7rem;
+    }
+    .tweet .meta .sentiment.positive { 
+      color: #0a9396;
+      background-color: rgba(10, 147, 150, 0.1);
+    }
+    .tweet .meta .sentiment.negative { 
+      color: #ef476f;
+      background-color: rgba(239, 71, 111, 0.1);
+    }
+    .tweet .meta .sentiment.neutral { 
+      color: #6c757d;
+      background-color: rgba(108, 117, 125, 0.1);
+    }
+    .tweet .text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #2b2d42;
+      margin-bottom: 0.5rem;
+    }
+    .tweet .topic-tag {
+      display: inline-block;
+      background: #f0f4f8;
+      color: #486581;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+    .meta { 
+      font-size: 0.85rem; 
+      color: #495057; 
+      margin-bottom: 0.5rem; 
+    }
+    
+    /* Topics Section */
+    #topics {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      margin-bottom: 1.5rem;
+      height: calc(100% - 2rem);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #topics h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2b2d42;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    #topicList {
+      overflow-y: auto;
+      flex-grow: 1;
+      padding-right: 0.5rem;
+      margin-right: -0.5rem;
+    }
+    
+    /* Custom scrollbar for topic list */
+    #topicList::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #topicList::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    #topicList::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    #topicList::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    .topic { 
+      padding: 1.25rem;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      transition: all 0.2s ease;
+    }
+    
+    .topic:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .topic h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #2b2d42;
+      margin-bottom: 0.5rem;
+    }
+    
+    .topic p {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+    
+    #feed { 
+      max-height: 75vh;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+      margin-right: -0.5rem;
+    }
+    
+    /* Custom scrollbar for feed */
+    #feed::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #feed::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    
+    #feed::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    #feed::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    /* Demo Mode Banner */
+    #demoBanner {
+      display: none;
+      background: linear-gradient(90deg, rgba(67, 97, 238, 0.1), rgba(76, 201, 240, 0.06));
+      border: 1px solid rgba(67, 97, 238, 0.2);
+      color: #2b2d42;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      margin: 0 0 1.5rem 0;
+      font-weight: 500;
+      font-size: 0.9rem;
+      align-items: center;
+      gap: 0.75rem;
+      animation: fadeIn 0.5s ease-out;
+    }
+    
+    #demoBanner i {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <header class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+      <div class="mb-3 mb-md-0">
+        <h1>Financial Topic Radar <span class="text-primary">Live</span></h1>
+        <small class="text-muted">Real-time sentiment & topic analysis (Twitter/X or demo)</small>
+      </div>
+
+      <div id="controls" class="d-flex flex-wrap align-items-center gap-2">
+        <div class="position-relative flex-grow-1" style="max-width: 300px;">
+          <i class="fas fa-search position-absolute" style="top: 50%; left: 12px; transform: translateY(-50%); color: #adb5bd; font-size: 0.9rem;"></i>
+          <input id="queryInput" class="form-control form-control-sm ps-4" placeholder="Search query (optional)" style="border-radius: 20px; height: 38px;">
+        </div>
+        <button id="startBtn" class="btn btn-success btn-sm px-3" style="border-radius: 20px; height: 38px;">
+          <i class="fas fa-play me-1"></i> Start
+        </button>
+        <button id="stopBtn" class="btn btn-outline-danger btn-sm px-3" style="border-radius: 20px; height: 38px;" disabled>
+          <i class="fas fa-stop me-1"></i> Stop
+        </button>
+        <button id="demoBtn" class="btn btn-outline-primary btn-sm px-3" style="border-radius: 20px; height: 38px;">
+          <i class="fas fa-vial me-1"></i> Demo Mode: OFF
+        </button>
+      </div>
+    </header>
+
+  <!-- Loading Indicator -->
+  <div id="loadingIndicator" style="display: none;">
+    <div class="spinner mb-3"></div>
+    <div class="h5 mb-1">Processing Tweets</div>
+    <p class="text-muted small mb-0">Analyzing sentiment and topics, please wait...</p>
+  </div>
+
+    <div id="demoBanner" class="d-flex align-items-center">
+      <i class="fas fa-info-circle"></i>
+      <span>Demo Mode Active — Showing sample tweets from stored data</span>
+    </div>
+
+    <main>
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <!-- Aggregate Card -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center mb-4">
+                <div class="bg-primary bg-opacity-10 p-3 rounded-3 me-3">
+                  <i class="fas fa-chart-line text-primary"></i>
+                </div>
+                <div>
+                  <h2 class="h5 mb-0">Sentiment Analysis</h2>
+                  <p class="text-muted small mb-0">Real-time sentiment metrics</p>
+                </div>
+              </div>
+              
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="p-3 bg-light rounded-3">
+                    <div class="d-flex align-items-center">
+                      <div class="me-3">
+                        <i class="fas fa-comment-dots text-muted"></i>
+                      </div>
+                      <div>
+                        <div class="small text-muted">Tweets</div>
+                        <div id="aggCount" class="h5 mb-0 fw-bold">—</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 bg-light rounded-3">
+                    <div class="d-flex align-items-center">
+                      <div class="me-3">
+                        <i class="fas fa-smile text-muted"></i>
+                      </div>
+                      <div>
+                        <div class="small text-muted">Avg. Sentiment</div>
+                        <div id="aggSent" class="h5 mb-0 fw-bold">—</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-4 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="small text-muted">Sentiment Scale</span>
+                  <div class="d-flex">
+                    <span class="badge bg-danger bg-opacity-10 text-danger me-2">Negative</span>
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary me-2">Neutral</span>
+                    <span class="badge bg-success bg-opacity-10 text-success">Positive</span>
+                  </div>
+                </div>
+                <div class="progress" style="height: 6px;">
+                  <div id="sentimentMeter" class="progress-bar bg-danger" role="progressbar" style="width: 50%;" aria-valuenow="0" aria-valuemin="-1" aria-valuemax="1"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Topics Card -->
+          <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center justify-content-between mb-4">
+                <h2 class="h5 mb-0">Trending Topics</h2>
+                <span id="topicCount" class="badge bg-primary bg-opacity-10 text-primary">0 topics</span>
+              </div>
+              <div id="topicList" class="topics-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <!-- Tweets Feed -->
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-0">
+              <div class="p-4 border-bottom">
+                <div class="d-flex align-items-center justify-content-between">
+                  <h2 class="h5 mb-0">Live Feed</h2>
+                  <div class="d-flex align-items-center">
+                    <span class="badge bg-light text-dark border me-2">
+                      <i class="fas fa-sync-alt fa-spin text-primary me-1"></i>
+                      <span>Live Updates</span>
+                    </span>
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input" type="checkbox" id="autoScrollSwitch" checked>
+                      <label class="form-check-label small" for="autoScrollSwitch">Auto-scroll</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="feed" class="list-unstyled p-4" style="height: calc(100vh - 220px);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script>
+  const feed = document.getElementById("feed");
+  const topicList = document.getElementById("topicList");
+  const aggCount = document.getElementById("aggCount");
+  const aggSent = document.getElementById("aggSent");
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn = document.getElementById("stopBtn");
+  const demoBtn = document.getElementById("demoBtn");
+  const demoBanner = document.getElementById("demoBanner");
+  const queryInput = document.getElementById("queryInput");
+
+  let demoMode = false;
+  let isProcessing = false;
+  let pollInterval;
+  let lastTweetId = null;
+
+  // Polling configuration
+  const POLL_INTERVAL = 3000; // 3 seconds
+  let isStreaming = false;
+
+  // Render a single tweet
+  function renderTweet(data) {
+    try {
+      // Hide loading indicator when first tweet arrives
+      if (isProcessing) {
+        console.log("Hiding loading indicator");
+        document.getElementById('loadingIndicator').style.display = 'none';
+        isProcessing = false;
+        
+        // Add animation class to body to enable animations
+        document.body.classList.add('animate__animated', 'animate__fadeIn');
+      }
+
+      // Validate required fields
+      if (!data) {
+        console.error("No data received for tweet");
+        return;
+      }
+      
+      // Safely get values with defaults
+      const tweetId = data.id || `tweet-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const sentimentLabel = (data.sentiment_label || 'neutral').toLowerCase();
+      const sentimentScore = data.sentiment_score !== undefined ? 
+        Number(data.sentiment_score).toFixed(2) : '0.00';
+      const topic = data.topic !== undefined ? String(data.topic) : '0';
+      const text = data.text || 'No text available';
+      
+      // Parse date safely
+      let createdAt;
+      try {
+        createdAt = data.created_at ? new Date(data.created_at) : new Date();
+      } catch (e) {
+        console.warn("Invalid date format, using current time");
+        createdAt = new Date();
+      }
+      
+      console.log(`Processing tweet ${tweetId} with sentiment: ${sentimentLabel}`);
+      
+      // Create tweet element
+      const tweetEl = document.createElement('li');
+      tweetEl.className = `tweet ${sentimentLabel} animate__animated animate__fadeIn`;
+      
+      // Determine sentiment icon
+      let sentimentIcon = 'meh';
+      if (sentimentLabel === 'positive') sentimentIcon = 'smile';
+      if (sentimentLabel === 'negative') sentimentIcon = 'frown';
+      
+      // Format the tweet content with improved layout
+      tweetEl.innerHTML = `
+        <div class="d-flex">
+          <div class="flex-shrink-0 me-3">
+            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+              <i class="fas fa-user text-muted"></i>
+            </div>
+          </div>
+          <div class="flex-grow-1">
+            <div class="d-flex flex-wrap align-items-center mb-2">
+              <span class="time me-3" title="${createdAt}">
+              </span>
+              <span class="sentiment ${sentimentLabel}">
+                <i class="far fa-${sentimentIcon} me-1"></i>
+                ${sentimentLabel} (${sentimentScore})
+              </span>
+            </div>
+            <div class="text mb-2">${escapeHtml(text)}</div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="badge bg-light text-dark border">
+                <i class="fas fa-hashtag text-muted me-1"></i> Topic ${topic}
+              </span>
+              <div class="actions">
+                <button class="btn btn-sm btn-link text-muted p-0 me-2">
+                  <i class="far fa-heart"></i>
+                </button>
+                <button class="btn btn-sm btn-link text-muted p-0">
+                  <i class="far fa-share-square"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add to the feed with animation
+      if (feed.firstChild) {
+        feed.insertBefore(tweetEl, feed.firstChild);
+      } else {
+        feed.appendChild(tweetEl);
+      }
+      
+      // Add animation class
+      setTimeout(() => {
+        tweetEl.style.opacity = '1';
+        tweetEl.style.transform = 'translateY(0)';
+      }, 10);
+      
+      // Limit number of displayed tweets
+      if (feed.children.length > 100) {
+        feed.removeChild(feed.lastChild);
+      }
+      
+      console.log(`Successfully rendered tweet ${tweetId}`);
+      
+    } catch (error) {
+      console.error("Error rendering tweet:", error, data);
+      
+      // Show error in UI for debugging
+      if (!document.getElementById('error-container')) {
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'error-container';
+        errorDiv.style.color = 'red';
+        errorDiv.style.padding = '10px';
+        errorDiv.style.margin = '10px';
+        errorDiv.style.border = '1px solid red';
+        document.body.insertBefore(errorDiv, document.body.firstChild);
+      }
+      
+      const errorDiv = document.getElementById('error-container');
+      errorDiv.textContent = `Error: ${error.message}. Check console for details.`;
+    }
+  }
+  
+  // Update topics display
+  function updateTopics(payload) {
+    topicList.innerHTML = "";
+    
+    // Update topic count badge
+    const topicCount = Object.keys(payload).length;
+    const topicCountElement = document.getElementById('topicCount');
+    if (topicCountElement) {
+      topicCountElement.textContent = `${topicCount} ${topicCount === 1 ? 'topic' : 'topics'}`;
+    }
+    
+    // Sort topics by count (descending)
+    const sortedTopics = Object.entries(payload).sort((a, b) => b[1].count - a[1].count);
+    
+    // Limit to top 10 topics for better UI
+    const topTopics = sortedTopics.slice(0, 10);
+    
+    // Create topic elements
+    topTopics.forEach(([topicId, topicData]) => {
+      const div = document.createElement("div");
+      div.className = "topic animate__animated animate__fadeIn";
+      
+      // Get sample text or summary
+      let sampleText = '';
+      if (Array.isArray(topicData.sample)) {
+        sampleText = topicData.sample.slice(0, 2).map(s => s.length > 100 ? s.substring(0, 100) + '...' : s).join(" • ");
+      } else if (topicData.summary) {
+        sampleText = topicData.summary;
+      }
+      
+      // Create topic element with improved layout
+      div.innerHTML = `
+        <div class="d-flex align-items-start">
+          <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 36px; height: 36px; flex-shrink: 0;">
+            <i class="fas fa-hashtag"></i>
+          </div>
+          <div>
+            <h3 class="h6 mb-1">
+              <span class="badge bg-primary bg-opacity-10 text-primary me-1">${topicId}</span>
+              <span class="text-muted small fw-normal">(${topicData.count} ${topicData.count === 1 ? 'tweet' : 'tweets'})</span>
+            </h3>
+            <p class="mb-0 small text-muted">${escapeHtml(sampleText) || 'No sample text available'}</p>
+          </div>
+        </div>
+      `;
+      
+      topicList.appendChild(div);
+    });
+    
+    // Add animation to topics
+    setTimeout(() => {
+      const topics = topicList.querySelectorAll('.topic');
+      topics.forEach((topic, index) => {
+        setTimeout(() => {
+          topic.classList.add('animate__fadeInUp');
+        }, index * 100);
+      });
+    }, 100);
+  }
+  
+  // Update aggregate data display
+  function updateAggregate(payload) {
+    // Update tweet count
+    const count = payload.count || 0;
+    aggCount.innerText = count.toLocaleString();
+    
+    // Update sentiment display
+    const sentiment = payload.avg_sentiment || 0;
+    const sentimentFormatted = sentiment.toFixed(3);
+    
+    // Determine sentiment color and icon
+    let sentimentClass = 'text-muted';
+    let sentimentIcon = 'meh';
+    
+    if (sentiment > 0.1) {
+      sentimentClass = 'text-success';
+      sentimentIcon = 'smile';
+    } else if (sentiment < -0.1) {
+      sentimentClass = 'text-danger';
+      sentimentIcon = 'frown';
+    }
+    
+    // Update sentiment display
+    aggSent.innerHTML = `
+      <span class="d-inline-flex align-items-center">
+        <i class="far fa-${sentimentIcon} ${sentimentClass} me-1"></i>
+        <span>${sentimentFormatted}</span>
+      </span>
+    `;
+    
+    // Update sentiment meter (scaled from -1 to 1 to 0-100%)
+    const sentimentPercent = ((sentiment + 1) / 2) * 100;
+    const sentimentMeter = document.getElementById('sentimentMeter');
+    if (sentimentMeter) {
+      sentimentMeter.style.width = `${sentimentPercent}%`;
+      // Update color based on sentiment
+      if (sentiment > 0.1) {
+        sentimentMeter.className = 'progress-bar bg-success';
+      } else if (sentiment < -0.1) {
+        sentimentMeter.className = 'progress-bar bg-danger';
+      } else {
+        sentimentMeter.className = 'progress-bar bg-secondary';
+      }
+    }
+  }
+
+  startBtn.addEventListener("click", async () => {
+    console.log("Start button clicked");
+    if (isProcessing) {
+      console.log("Already processing, ignoring click");
+      return;
+    }
+    
+    const query = queryInput.value.trim() || undefined;
+    console.log("Using query:", query || "(default)");
+    isProcessing = true;
+    document.getElementById('loadingIndicator').style.display = 'flex';
+    feed.innerHTML = ''; // Clear previous tweets
+    topicList.innerHTML = ''; // Clear previous topics
+    
+    // Reset aggregate display
+    aggCount.textContent = 'Tweets (window): 0';
+    aggSent.textContent = 'Average Sentiment: 0.00';
+    
+    try {
+      // Make a POST request to /api/start
+      const response = await fetch('/api/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query,
+          demo_mode: demoMode
+        })
+      });
+      
+      const result = await response.json();
+      console.log("Start response:", result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to start stream');
+      }
+      
+      // Start polling for updates
+      isStreaming = true;
+      pollInterval = setInterval(pollForUpdates, POLL_INTERVAL);
+      
+    } catch (error) {
+      console.error("Error starting stream:", error);
+      alert("Failed to start stream: " + error.message);
+      document.getElementById('loadingIndicator').style.display = 'none';
+      isProcessing = false;
+    }
+  });
+
+  stopBtn.addEventListener("click", async () => {
+    try {
+      const response = await fetch('/api/stop', { method: "POST" });
+      const result = await response.json();
+      console.log("Stop response:", result);
+      
+      // Stop polling
+      isStreaming = false;
+      clearInterval(pollInterval);
+      
+      // Reset UI
+      isProcessing = false;
+      document.getElementById('loadingIndicator').style.display = 'none';
+      
+    } catch (error) {
+      console.error("Error stopping stream:", error);
+    }
+  });
+
+  demoBtn.addEventListener("click", async () => {
+    if (isProcessing) return; // Prevent mode changes while processing
+    
+    demoMode = !demoMode;
+    
+    try {
+      const response = await fetch('/api/demo_mode', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: demoMode })
+      });
+      
+      const result = await response.json();
+      console.log("Demo mode set to:", demoMode, result);
+      
+      // Update UI
+      demoBtn.textContent = `Demo Mode: ${demoMode ? 'ON' : 'OFF'}`;
+      demoBanner.style.display = demoMode ? 'block' : 'none';
+      demoBtn.classList.toggle('btn-outline-secondary', !demoMode);
+      demoBtn.classList.toggle('btn-warning', demoMode);
+      
+    } catch (error) {
+      console.error("Error setting demo mode:", error);
+      // Revert the toggle if there was an error
+      demoMode = !demoMode;
+    }
+  });
+
+  function pollForUpdates() {
+    fetch('/api/updates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ last_tweet_id: lastTweetId })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.tweets) {
+        data.tweets.forEach(renderTweet);
+        lastTweetId = data.tweets[data.tweets.length - 1].id;
+      }
+      if (data.topics) {
+        updateTopics(data.topics);
+      }
+      if (data.aggregate) {
+        updateAggregate(data.aggregate);
+      }
+    })
+    .catch(error => console.error("Error polling for updates:", error));
+  }
+
+  // Helper function to escape HTML
+  function escapeHtml(unsafe) {
+    if (!unsafe && unsafe !== 0) return "";
+    const div = document.createElement('div');
+    div.textContent = String(unsafe);
+    return div.innerHTML;
+  }
+  
+  // Initialize the application
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('Application initialized');
+    
+    // Add smooth scrolling to the feed
+    const feed = document.getElementById('feed');
+    const autoScrollSwitch = document.getElementById('autoScrollSwitch');
+    
+    // Auto-scroll to bottom when new tweets arrive
+    const observer = new MutationObserver(() => {
+      if (autoScrollSwitch.checked) {
+        feed.scrollTop = feed.scrollHeight;
+      }
+    });
+    
+    // Start observing the feed for changes
+    observer.observe(feed, { childList: true, subtree: true });
+    
+    // Add animation to elements when they come into view
+    const animateOnScroll = () => {
+      const elements = document.querySelectorAll('.tweet:not(.animated)');
+      elements.forEach(element => {
+        const elementTop = element.getBoundingClientRect().top;
+        const windowHeight = window.innerHeight;
+        
+        if (elementTop < windowHeight - 100) {
+          element.classList.add('animated');
+          element.style.opacity = '1';
+          element.style.transform = 'translateY(0)';
+        }
+      });
+    };
+    
+    // Run once on load
+    setTimeout(animateOnScroll, 500);
+    
+    // Run on scroll
+    window.addEventListener('scroll', animateOnScroll);
+    
+    // Add tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+  
+  // Add CSS for animations
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in-up {
+      animation: fadeInUp 0.5s ease-out forwards;
+    }
+    
+    /* Smooth transitions for sentiment meter */
+    #sentimentMeter {
+      transition: width 0.8s ease, background-color 0.8s ease;
+    }
+    
+    /* Custom scrollbar for the entire page */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+  `;
+  document.head.appendChild(style);
+</script>
+</body>
+</html>

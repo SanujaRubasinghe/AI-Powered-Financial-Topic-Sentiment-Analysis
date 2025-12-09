@@ -1,0 +1,36 @@
+/* static/style.css */
+body {
+  font-family: Inter, system-ui, Arial, sans-serif;
+  margin: 0;
+  background: #0f1724;
+  color: #e6eef8;
+  padding: 20px;
+}
+
+header { display:flex; align-items:center; justify-content:space-between; gap: 16px; }
+h1 { margin: 0 0 10px 0; font-size: 20px; color: #9be7ff; }
+#controls { display:flex; align-items:center; gap:8px; }
+
+button {
+  background: linear-gradient(180deg,#2b6cb0,#2b5aa2);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+main { display:grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top:16px; }
+section { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.6); }
+#stream { grid-column: 1 / span 2; max-height: 520px; overflow:auto; }
+
+.tweet { padding: 10px; margin-bottom: 8px; border-radius: 8px; background: rgba(255,255,255,0.02); }
+.tweet .meta { font-size: 12px; color: #a7b5c3; margin-bottom:6px; }
+.tweet .text { font-size: 15px; line-height: 1.3; }
+
+.tweet.positive { border-left: 4px solid #22c55e; }
+.tweet.negative { border-left: 4px solid #ef4444; }
+.tweet.neutral { border-left: 4px solid #f59e0b; }
+
+.topic { margin-bottom: 12px; padding: 10px; background: rgba(255,255,255,0.01); border-radius: 8px; }
+.topic h3 { margin: 0 0 6px 0; color: #ffd6a5; }

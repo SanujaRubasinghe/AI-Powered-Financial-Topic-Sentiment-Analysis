@@ -1,0 +1,14 @@
+flask
+flask-socketio
+requests
+python-dotenv
+transformers
+sentence-transformers
+bertopic
+hdbscan
+umap-learn
+scikit-learn
+pandas
+prophet
+nltk
+tqdm

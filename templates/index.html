@@ -366,10 +366,10 @@
     </div>
 
     <main>
-      <div class="row g-4">
-        <div class="col-lg-4">
+      <div class="container-fluid">
+        <div class="row mb-2">
           <!-- Aggregate Card -->
-          <div class="card border-0 shadow-sm mb-4">
+          <div class="col-12 card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
               <div class="d-flex align-items-center mb-4">
                 <div class="bg-primary bg-opacity-10 p-3 rounded-3 me-3">
@@ -425,43 +425,46 @@
               </div>
             </div>
           </div>
-
-          <!-- Topics Card -->
-          <div class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-center justify-content-between mb-4">
-                <h2 class="h5 mb-0">Trending Topics</h2>
-                <span id="topicCount" class="badge bg-primary bg-opacity-10 text-primary">0 topics</span>
-              </div>
-              <div id="topicList" class="topics-container"></div>
-            </div>
-          </div>
         </div>
 
-        <div class="col-lg-8">
-          <!-- Tweets Feed -->
-          <div class="card border-0 shadow-sm h-100">
-            <div class="card-body p-0">
-              <div class="p-4 border-bottom">
-                <div class="d-flex align-items-center justify-content-between">
-                  <h2 class="h5 mb-0">Live Feed</h2>
-                  <div class="d-flex align-items-center">
-                    <span class="badge bg-light text-dark border me-2">
-                      <i class="fas fa-sync-alt fa-spin text-primary me-1"></i>
-                      <span>Live Updates</span>
-                    </span>
-                    <div class="form-check form-switch mb-0">
-                      <input class="form-check-input" type="checkbox" id="autoScrollSwitch" checked>
-                      <label class="form-check-label small" for="autoScrollSwitch">Auto-scroll</label>
+          <div class="row">
+              <!-- Topics Card -->
+            <div class="col-4 mb-6 card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                  <h2 class="h5 mb-0">Trending Topics</h2>
+                  <span id="topicCount" class="badge bg-primary bg-opacity-10 text-primary">0 topics</span>
+                </div>
+                <div id="topicList" class="topics-container"></div>
+              </div>
+            </div>
+
+
+            <div class="col-8 mb-4">
+              <!-- Tweets Feed -->
+              <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-0">
+                  <div class="p-4 border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <h2 class="h5 mb-0">Live Feed</h2>
+                      <div class="d-flex align-items-center">
+                        <span class="badge bg-light text-dark border me-2">
+                          <i class="fas fa-sync-alt fa-spin text-primary me-1"></i>
+                          <span>Live Updates</span>
+                        </span>
+                        <div class="form-check form-switch mb-0">
+                          <input class="form-check-input" type="checkbox" id="autoScrollSwitch" checked>
+                          <label class="form-check-label small" for="autoScrollSwitch">Auto-scroll</label>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  <div id="feed" class="list-unstyled p-4" style="height: calc(100vh - 220px);"></div>
                 </div>
               </div>
-              <div id="feed" class="list-unstyled p-4" style="height: calc(100vh - 220px);"></div>
             </div>
           </div>
         </div>
-      </div>
     </main>
   </div>
 

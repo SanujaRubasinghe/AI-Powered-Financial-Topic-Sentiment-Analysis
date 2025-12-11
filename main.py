@@ -49,7 +49,7 @@ from flask_socketio import SocketIO
 # assume NLPPipeline is imported as nlp
 
 class Streamer(threading.Thread):
-    def __init__(self, bearer_token=None, query=None, poll_interval=20, demo_mode=True, demo_file="twitter_response.json", replay_delay=2):
+    def __init__(self, bearer_token=None, query=None, poll_interval=20, demo_mode=True, demo_file="synthetic_financial_tweets.json", replay_delay=2):
         super().__init__()
         self.demo_mode = demo_mode
         self.demo_file = demo_file

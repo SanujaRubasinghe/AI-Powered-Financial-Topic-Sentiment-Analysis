@@ -1,5 +1,4 @@
 .venv
 .env
 synthetic_financial_tweets.json
-twitter_response.json
 twitter_response_2.json
